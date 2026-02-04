@@ -1,5 +1,5 @@
 /* 
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
 
 #include <stdio.h>
@@ -28,6 +28,21 @@ int main() {
     tab[longueur - 1] = '\0';
 
     pid = fork();
+
+    if(pid < 0) {
+      fprintf(stderr, "Erreur dans le fork\n");
+      exit(EXIT_FAILURE);
+    }
+
+    if(pid > 0) {
+      /* Pere */
+      wait(NULL);
+    } else {
+      /* Fils */
+      execlp(tab, tab, (char *) NULL);
+      fprintf(stderr, "Erreur dans le exec\n");
+      exit(EXIT_FAILURE);
+    }
 
     /* Actions:
      * 

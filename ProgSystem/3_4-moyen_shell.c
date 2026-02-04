@@ -1,5 +1,5 @@
 /* 
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
 
 #include <stdio.h>
@@ -45,17 +45,17 @@ int main() {
     while (i < longueur) {
       /* On passe les blancs et tabulation */
       while (tab[i] == ' ' || tab[i] == '\t') {
-	i++;
+        	i++;
       }
       if (tab[i] == '\0')
-	break;			/* fin de ligne, on sort */
+	        break;			/* fin de ligne, on sort */
 
       /* stockage dans arg_tab de l'adresse trouvee */
       arg_tab[n++] = &tab[i];
 
       /* on va juste apres la fin du mot */
       while (tab[i] != ' ' && tab[i] != '\t' && tab[i] != '\0')
-	i++;
+	        i++;
       /* On place un caractere ASCII NUL apres le dernier
        * caractere du mot */
       tab[i++] = '\0';
@@ -74,6 +74,15 @@ int main() {
     pid = fork();
 
     switch (pid) {
-    ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?}
+      case -1 :
+        fprintf(stderr, "Erreur dans le fork\n");
+        exit(EXIT_FAILURE);
+      case 0 :
+        execlp(tab, tab, (char *) NULL);
+        fprintf(stderr, "Erreur dans le exec\n");
+        exit(EXIT_FAILURE); 
+      default:
+        wait(NULL);   
+    }
   }
 }
