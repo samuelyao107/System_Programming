@@ -1,5 +1,5 @@
 /* 
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  *
  * Programme a appeler avec ou sans l'option "true"
  * Lancer "top" auparavant (pour terminer taper "q").

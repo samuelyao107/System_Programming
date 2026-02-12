@@ -1,5 +1,5 @@
 /* 
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
 
 #include <sys/wait.h>
@@ -22,6 +22,9 @@ void travail() {
 void travail() __attribute__((noreturn));
 /* Petit raffinement pour le compilateur: cette fonction ne termine pas */
 
+void handler(int sig) {/* On récupère le fils */ 
+   wait(NULL); 
+}
 
 int main() {
   int pid, longueur;
@@ -30,7 +33,7 @@ int main() {
   int r;
 
   pid = fork();
-
+  signal(SIGCHLD, handler); 
   if (pid != 0) {	/* Processus Pere */
     travail();
   } else {		/* Processus Fils */

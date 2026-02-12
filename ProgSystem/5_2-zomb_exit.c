@@ -1,5 +1,5 @@
 /* 
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
 
 #include <sys/wait.h>
@@ -13,14 +13,14 @@ int status;
 int fils;
 
 void fin_fils(int n) {
-  fils = wait(&status);
+  fils = wait(&status); /*c'est wait qui se charge de remplir status*/
   printf("Fils numero: %d\n", fils);
 
-  if (W ? ? ? ? ? ? ? (status))
-    printf("termine sur exit(%d)\n", W ? ? ? ? ? ? ? ? (status));
+  if (WIFEXITED(status))
+    printf("termine sur exit(%d)\n", WIFEXITED(status));
 
-  if (W ? ? ? ? ? ? ? ? ? (status))
-    printf("termine sur signal %d\n", W ? ? ? ? ? ? ? (status));
+  if (WIFSIGNALED(status))
+    printf("termine sur signal %d\n", WIFSIGNALED(status));
 
   exit(EXIT_SUCCESS);			/* pour terminer le pere */
 }
@@ -60,11 +60,12 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
   pid = fork();
-
+  signal(SIGCHLD, fin_fils);
   if (pid != 0) {	/* Processus Pere */
     travail();
+    wait(&status);
   } else {		/* Processus Fils */
-    sleep(5);
+    sleep(60);
     exit(x);
   }
 }

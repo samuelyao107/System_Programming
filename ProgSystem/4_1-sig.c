@@ -15,6 +15,23 @@ void hdl_sys1(int n) {
 
 }
 
+void hdl_msg1(int n){
+  /*write(STDOUT_FILENO, "\nMessage numero 1\n", 18);*/
+  printf("Message 1 \n");
+}
+
+void hdl_msg2(int n){
+   /*write(STDOUT_FILENO, "\nMessage numero 2\n", 18);*/
+   printf("Message 2\n");
+}
+
+void hdl_quit(int n){
+  write(STDOUT_FILENO, "\n[QUIT recu - changement handler]\n", 35);
+  sig_avant = signal(SIGINT, sig_avant);
+}
+
+
+
 
 void travail() {
   /* Je travaille tres intensement !    */
@@ -37,9 +54,13 @@ void travail() __attribute__((noreturn));
 
 
 int main() {
-  printf("PID: %d\n", getpid());
-  
-  /* ? ? ? ? ? ? */
+ printf("PID: %d\n", getpid());
+ 
+ signal(SIGILL, hdl_sys1);
+ signal(SIGINT, hdl_msg1);
+ sig_avant = hdl_msg2;
+ signal(SIGQUIT, hdl_quit);
+ 
   
   travail();
 }
