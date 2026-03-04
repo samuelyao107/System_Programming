@@ -1,6 +1,7 @@
 /* 
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
+#define _POSIX_C_SOURCE 200809L 
 
 #include <signal.h>
 #include <stdio.h>
@@ -9,6 +10,7 @@
 #include <string.h>
 
 void (*sig_avant)(int);		/* pour la question 4.3 */
+struct sigaction sa_int, sa_quit;		/* pour la question 4.4 */
 
 void hdl_sys1(int n) {
   printf("hdl_sys1: Signal recu: %d\n", n);
@@ -16,18 +18,26 @@ void hdl_sys1(int n) {
 }
 
 void hdl_msg1(int n){
-  /*write(STDOUT_FILENO, "\nMessage numero 1\n", 18);*/
   printf("Message 1 \n");
 }
 
 void hdl_msg2(int n){
-   /*write(STDOUT_FILENO, "\nMessage numero 2\n", 18);*/
    printf("Message 2\n");
 }
 
 void hdl_quit(int n){
   write(STDOUT_FILENO, "\n[QUIT recu - changement handler]\n", 35);
-  sig_avant = signal(SIGINT, sig_avant);
+ /* Avec signal()
+ //renvoie du handler precedent pour SIGINT
+  sig_avant = signal(SIGINT, sig_avant);*/
+
+  /*Avec sigaction()*/
+  struct sigaction sa_new, sa_old;
+  sa_new.sa_handler = sig_avant;
+  sa_new.sa_flags = 0;
+  sigemptyset(&sa_new.sa_mask);
+  sigaction(SIGINT, &sa_new, &sa_old);
+  sig_avant = sa_old.sa_handler; 
 }
 
 
@@ -55,12 +65,25 @@ void travail() __attribute__((noreturn));
 
 int main() {
  printf("PID: %d\n", getpid());
- 
+/* Avec signal()
  signal(SIGILL, hdl_sys1);
  signal(SIGINT, hdl_msg1);
  sig_avant = hdl_msg2;
  signal(SIGQUIT, hdl_quit);
- 
+ */
+
+ /* Avec sigaction() */
+sa_int.sa_handler = hdl_msg1;
+sa_int.sa_flags = 0;
+sigemptyset(&sa_int.sa_mask);
+sigaction(SIGINT, &sa_int, NULL);
+
+sig_avant = hdl_msg2;
+
+sa_quit.sa_handler = hdl_quit;
+sa_quit.sa_flags = 0;
+sigemptyset(&sa_quit.sa_mask);
+sigaction(SIGQUIT, &sa_quit, NULL);
   
-  travail();
+travail();
 }
