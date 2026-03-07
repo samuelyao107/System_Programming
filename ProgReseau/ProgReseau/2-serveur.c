@@ -15,17 +15,58 @@
 
 #define BUFSIZE 512
 
+int sfd, s, ns, r;
+struct addrinfo hints;
+struct addrinfo *result, *rp;
+char buf[BUFSIZE];
+ssize_t nread, nwrite;
+struct sockaddr_storage from;
+socklen_t fromlen;
+char host[NI_MAXHOST];
+char port[NI_MAXSERV];
+char *message = "Message a envoyer: ";
+
+void communication(){
+   close(sfd);
+        /* Reconnaissance de la machine cliente */
+        s = getnameinfo((struct sockaddr *)&from, fromlen,
+                host, NI_MAXHOST,
+                port, NI_MAXSERV,
+                NI_NUMERICHOST | NI_NUMERICSERV);
+                
+        if (s == 0)
+          printf("Debut avec client '%s:%s'\n", host, port);
+        else
+          fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
+
+        for (;;) {
+          nwrite = write(ns, message, strlen(message));
+          if (nwrite < 0) {
+            perror("write");
+          close(ns);
+          break;
+          }
+          nread = read(ns, buf, BUFSIZE -1);
+          if (nread == 0) {
+              printf("Fin avec client '%s'\n", host);
+              close(ns);
+              break;
+          } else if (nread < 0) {
+              perror("read");
+              close(ns);
+              break;
+            }
+          buf[nread] = '\0';
+          printf("Message recu '%s'\n", buf);
+        }
+        signal(SIGCHLD, SIG_IGN);
+        exit(EXIT_SUCCESS); 
+}
+
+
+
 int main(int argc, char **argv) {
-  int sfd, s, ns, r;
-  struct addrinfo hints;
-  struct addrinfo *result, *rp;
-  char buf[BUFSIZE];
-  ssize_t nread, nwrite;
-  struct sockaddr_storage from;
-  socklen_t fromlen;
-  char host[NI_MAXHOST];
-  char port[NI_MAXSERV];
-  char *message = "Message a envoyer: ";
+
 
   if (argc != 2) {
     printf("Usage: %s  port_serveur\n", argv[0]);
@@ -93,43 +134,11 @@ int main(int argc, char **argv) {
         perror("fork");
         exit(EXIT_FAILURE);
       case 0:
-        close(sfd);
-        /* Reconnaissance de la machine cliente */
-        s = getnameinfo((struct sockaddr *)&from, fromlen,
-                host, NI_MAXHOST,
-                port, NI_MAXSERV,
-                NI_NUMERICHOST | NI_NUMERICSERV);
-                
-        if (s == 0)
-          printf("Debut avec client '%s:%s'\n", host, port);
-        else
-          fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
-
-        for (;;) {
-          nwrite = write(ns, message, strlen(message));
-          if (nwrite < 0) {
-            perror("write");
-          close(ns);
-          break;
-          }
-          nread = read(ns, buf, BUFSIZE -1);
-          if (nread == 0) {
-              printf("Fin avec client '%s'\n", host);
-              close(ns);
-              break;
-          } else if (nread < 0) {
-              perror("read");
-              close(ns);
-              break;
-            }
-          buf[nread] = '\0';
-          printf("Message recu '%s'\n", buf);
-        }
-        signal(SIGCHLD, SIG_IGN);
-        exit(EXIT_SUCCESS); 
+      /*Dans le fils*/
+       communication();
       default:
+      /*Dans le père*/
         close(ns);
     }
-   
   }
 }
