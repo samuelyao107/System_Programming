@@ -1,5 +1,5 @@
 /*
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
 
 import java.io.*;
@@ -13,14 +13,17 @@ public class ClientTCP {
     PrintWriter out = null;
     BufferedReader in = null;
     int port;
-
+    
+    String host = args[0];
     port = Integer.parseInt(args[1]);
     System.out.println("port : " + port);
 
     try {
-      clientSocket = new  //??????????????????;
-      out = new //????????????????????????????
-      in = new //????????????????????????????
+      clientSocket = new Socket(host,port);
+      out = new PrintWriter(clientSocket.getOutputStream(), true);
+      in = new BufferedReader(
+        new InputStreamReader(clientSocket.getInputStream())
+      );
     } catch (UnknownHostException e) {
       System.err.println("Don't know about host: " + args[0]);
       System.exit(1);
@@ -42,8 +45,8 @@ public class ClientTCP {
     System.out.print(buf);   // Affichage
 
     while ((userInput = stdIn.readLine()) != null) {
-      // Envoi sur la socket
-      // ??????
+       out.println(userInput);
+       System.out.println("Message: "+ in.readLine());
       // Lecture de la socket et affichage
     }
 
