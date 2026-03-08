@@ -1,5 +1,5 @@
 /*
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
 
 #include <netinet/in.h>
@@ -52,21 +52,33 @@ enum TypeFichier typeFichier(char *fichier) {
  * Arguments: le nom du fichier, la socket
  * valeur renvoyee: true si OK, false si erreur
  */
-#define BUSIZE 1048;
+#define BUFSIZE 1048
 bool envoiFichier(char *fichier, int soc) {
   int fd;
   char buf[BUFSIZE];
   ssize_t nread;
 
-  /* A completer.
-   * On peut se poser la question de savoir si le fichier est
-   * accessible avec l'appel systeme access();
-   * Si oui, envoie l'entete OK 200 puis le contenu du fichier
-   * Si non, envoie l'entete ERROR 403
-   *
-   * Note: le fichier peut etre plus gros que votre buffer,
-   * de meme il peut etre plus petit...
-   */
+  if(access(fichier,R_OK)== 0){
+
+      write(soc,OK200,strlen(OK200));
+      fd = open(fichier, O_RDONLY);
+
+      if (fd < 0) {
+        perror("Erreur ouverture fichier");
+        return false;
+      }
+
+      while ((nread = read(fd, buf, sizeof(buf))) > 0) {
+        write(soc, buf, nread); 
+      }
+
+      close(fd);
+      return true;
+
+   }else{
+       write(soc,ERROR403,strlen(ERROR403));
+       return false;
+   }
 }
 
 
@@ -88,15 +100,21 @@ bool envoiRep(char *rep, int soc) {
   write(soc, buf, strlen(buf));
 
   while ((pdi = readdir(dp)) != NULL) {
-    /* A completer
-     * Le nom de chaque element contenu dans le repertoire est retrouvable a
-     * l'adresse pdi->d_name. Faites man readdir pour vous en convaincre.
-     * Dans un premier temps, on se contentera de la liste simple.
-     * Dans une petite amelioration on poura prefixer chaque element avec
-     * l'icone folder ou generic en fonction du type du fichier.
-     * (Tester le nom de l'element avec le chemin complet.) */
+
+     sprintf(buf, "%s/%s",rep, pdi->d_name);
+     if(typeFichier(buf)==NORMAL){
+        sprintf(nom,"<img src=\"icons/generic.gif\">%s<br>",pdi->d_name);
+        write(soc,nom,strlen(nom));
+     }else if(typeFichier(buf)==REPERTOIRE){
+        sprintf(nom,"<img src=\"icons/folder.gif\">/%s<br>",pdi->d_name);
+        write(soc,nom,strlen(nom));
+     }else{
+        continue;
+     }
+
   }
   write(soc, "\n\r", 2);
+  closedir(dp);
   return true;
 }
 
@@ -105,16 +123,10 @@ void communication(int soc, struct sockaddr *from, socklen_t fromlen) {
   int s;
   char buf[BUFSIZE];
   ssize_t nread;
-  char host[NI_MAXHOST];
-  bool result;
   char *pf;
   enum op { GET, PUT } operation;
+  enum TypeFichier type;
 
-  /* Eventuellement, inserer ici le code pour la reconnaissance de la
-   * machine appelante */
-
-
-  /* Reconnaissance de la requete */
   nread = read(soc, buf, BUFSIZE);
   if (nread > 0) {
     if (strncmp(buf, "GET", 3) == 0)
@@ -127,25 +139,19 @@ void communication(int soc, struct sockaddr *from, socklen_t fromlen) {
   switch (operation) {
     case GET:
       pf = strtok(buf + 4, " ");
-      /* On pointe alors sur le / de "GET /xxx HTTP...
-       * strtok() rend l'adresse du premier caractere
-       * apres l'espace et termine le mot par '\0'
-       */
-      pf++; /* pour pointer apres le slash */
-      /* pf pointe sur le nom du fichier suivant le / de la requete.
-       * Si la requete etait "GET /index.html ...", alors pf pointe sur
-       * le "i" de "index.html"
-       */
-      /* si le fichier est un fichier ordinaire, on l'envoie avec la fonction
-       * envoiFichier().
-       * Si c'est un repertoire, on envoie son listing avec la fonction
-       * envoiRep().
-       * Vous pouvez utiliser la fonction typeFichier() ci-dessous pour tester
-       * le type du fichier.
-       */
-
-      /************ A completer ici**********/
-
+      pf++; 
+      if(strlen(pf) == 0){
+        pf= "index.html";
+      }
+      type = typeFichier(pf);
+      if(type == NORMAL){
+          envoiFichier(pf, soc);
+      }else if (type == REPERTOIRE){
+            envoiRep(pf,soc);
+      }else {
+        write(soc,ERROR404,strlen(ERROR404));
+      }
+      break;
   }
 
   close(soc);
@@ -153,7 +159,9 @@ void communication(int soc, struct sockaddr *from, socklen_t fromlen) {
 
 
 int main(int argc, char **argv) {
-  int sfd, s, ns;
+  int sfd, s, ns,r;
+  char host[NI_MAXHOST];
+  char port[NI_MAXSERV];
   struct addrinfo hints;
   struct addrinfo *result, *rp;
   struct sockaddr_storage from;
@@ -164,6 +172,84 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  /* Inserer ici le code d'un serveur TCP concurent */
+
+  memset(&hints, 0, sizeof(struct addrinfo));
+  hints.ai_family = AF_INET6;           
+  hints.ai_socktype = SOCK_STREAM;      
+  hints.ai_flags = AI_PASSIVE;          
+  hints.ai_flags |= AI_V4MAPPED|AI_ALL; 
+  hints.ai_protocol = 0;              
+
+  s = getaddrinfo(NULL, argv[1], &hints, &result);
+  if (s != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+    exit(EXIT_FAILURE);
+  }
+
+  for (rp = result; rp != NULL; rp = rp->ai_next) {
+
+    
+    sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    if (sfd == -1)
+      continue;
+     
+ 
+    r = bind(sfd, rp->ai_addr, rp->ai_addrlen);
+    if (r == 0)
+      break;           
+    close(sfd);
+  }
+
+    if (rp == NULL) {     /* Aucune adresse valide */
+    perror("bind");
+    exit(EXIT_FAILURE);
+  }
+  freeaddrinfo(result); /* Plus besoin */
+
+  /* Positionnement de la machine a etats TCP sur listen */
+  r= listen(sfd, 15);
+  if(r == -1) {
+    perror("listen");
+    exit(EXIT_FAILURE);
+  }
+    
+  signal(SIGCHLD, SIG_IGN);
+  for (;;) {
+    /* Acceptation de connexions */
+    fromlen = sizeof(from);
+    ns = accept(sfd, (struct sockaddr *)&from, &fromlen);
+    if (ns == -1) {
+      perror("accept");
+      exit(EXIT_FAILURE);
+    }
+
+    pid_t pid = fork();
+
+    switch (pid){
+      case -1:
+        perror("fork");
+        exit(EXIT_FAILURE);
+      case 0:
+      /*Dans le fils*/
+        close(sfd);
+        /* Reconnaissance de la machine cliente */
+        s = getnameinfo((struct sockaddr *)&from, fromlen,
+                host, NI_MAXHOST,
+                port, NI_MAXSERV,
+                NI_NUMERICHOST | NI_NUMERICSERV);
+                
+        if (s == 0)
+          printf("Debut avec client '%s:%s'\n", host, port);
+        else
+          fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
+
+        communication(ns, (struct sockaddr *)&from, fromlen);
+
+        exit(EXIT_SUCCESS); 
+      default:
+      /*Dans le père*/
+        close(ns);
+    }
+  }
 
 }

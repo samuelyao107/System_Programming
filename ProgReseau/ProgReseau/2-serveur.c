@@ -59,7 +59,7 @@ void communication(){
           buf[nread] = '\0';
           printf("Message recu '%s'\n", buf);
         }
-        signal(SIGCHLD, SIG_IGN);
+      
         exit(EXIT_SUCCESS); 
 }
 
@@ -138,6 +138,7 @@ int main(int argc, char **argv) {
        communication();
       default:
       /*Dans le père*/
+        signal(SIGCHLD, SIG_IGN);
         close(ns);
     }
   }
