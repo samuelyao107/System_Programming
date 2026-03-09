@@ -1,7 +1,7 @@
 /*
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
-
+#define _GNU_SOURCE  
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,12 +50,12 @@ int main(int argc, char **argv) {
   for (rp = result; rp != NULL; rp = rp->ai_next) {
 
     /* Ouverture de la socket */
-    sfd = ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
+    sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
     if (sfd == -1)
       continue;
 
     /* Connexion au distant */
-    r = ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
+    r = connect(sfd, rp->ai_addr, rp->ai_addrlen);
     if (r != -1)
       break;            /* Succes */
     close(sfd);
