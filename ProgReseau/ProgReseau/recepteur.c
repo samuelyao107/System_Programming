@@ -1,5 +1,5 @@
 /*
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
 
 #include <sys/types.h>
@@ -48,12 +48,12 @@ int main(int argc, char **argv) {
   for (rp = result; rp != NULL; rp = rp->ai_next) {
 
     /* Creation de la socket */
-    sfd = ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
+    sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
     if (sfd == -1)
       continue;
 
     /* Association d'un port a la socket */
-    r = ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
+    r = bind(sfd, rp->ai_addr, rp->ai_addrlen);
     if (r == 0)
       break;            /* Succes */
     close(sfd);
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   for (;;) {
     /* Reception donnees */
     fromlen = sizeof(from);
-    nrecv = ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ?
+    nrecv = recvfrom(sfd,buf,sizeof(buf),0,(struct sockaddr *)&from,&fromlen);
     if (nrecv == -1) {
       perror("Erreur en lecture socket\n");
       exit(EXIT_FAILURE);
