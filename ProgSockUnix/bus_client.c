@@ -1,5 +1,5 @@
 /*
- * Auteur(s):
+ * Auteur(s): Samuel YAO
  */
 
 #include <stdlib.h>
